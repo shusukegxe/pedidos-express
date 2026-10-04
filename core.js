@@ -1,17 +1,18 @@
 'use strict';
-/* PedidosExpress — núcleo: estado + API simulada + sincronización entre pestañas.
-   El "backend" es un setTimeout y la "base de datos" es localStorage, pero la forma
-   de las operaciones (POST /pedidos, PATCH /pedidos/:id...) es la que tendría una
-   API real; toda llamada queda registrada con método, ruta, estado y latencia. */
+/* Tortas · Hechas a Mano — núcleo: estado + API simulada + sincronización entre pestañas.
+   Adaptado del prototipo PedidosExpress usando como referencia el repo venta-tortas-caseras
+   (catálogo, precios y estética). El "backend" es un setTimeout y la "base de datos" es
+   localStorage, pero la forma de las operaciones es la que tendría una API real. */
 
 const Store = (() => {
-  const KEY = 'pedidos-express-v3-1';
+  const KEY = 'tortas-pedidos-v1';
   const LOW = 3;
 
   // ---------- utilidades ----------
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const lat = () => 80 + Math.random() * 140;
-  const money = n => '$' + n.toFixed(2);
+  const money = n => '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');  // CLP: $18.000
+  const fecha = s => s ? new Date(s + 'T12:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' }) : '';
   const hora = t => new Date(t).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
   const ahora = () => new Date().toLocaleTimeString('es', { hour12: false });
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -19,33 +20,36 @@ const Store = (() => {
   // ---------- la base de datos ----------
   function seedDb() {
     const t = Date.now();
+    const ayer = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const manana = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
     return {
       seq: 3,
       products: [
-        { id: 'p1', name: 'Hamburguesa clásica', price: 8.5,  stock: 12 },
-        { id: 'p2', name: 'Pizza pepperoni',     price: 11,   stock: 8  },
-        { id: 'p3', name: 'Tacos (3 u)',         price: 7,    stock: 15 },
-        { id: 'p4', name: 'Papas fritas',        price: 3.5,  stock: 20 },
-        { id: 'p5', name: 'Refresco',            price: 2,    stock: 30 },
-        { id: 'p6', name: 'Brownie',             price: 4,    stock: 5  },
+        { id: 'p1', img: 'selva-negra.png',   name: 'Selva Negra', desc: 'Bizcocho de chocolate, crema chantilly, cerezas y virutas.', price: 18000, stock: 8 },
+        { id: 'p2', img: 'tres-leches.png',   name: 'Tres Leches', desc: 'Clásica y jugosa, con un toque de canela y crema suave.',     price: 17000, stock: 10 },
+        { id: 'p3', img: 'cheesecake.png',    name: 'Cheesecake',  desc: 'Base de galleta, crema de queso y salsa de berries casera.', price: 20000, stock: 6 },
+        { id: 'p4', img: 'chantilly.png',     name: 'Torta de Chantilly', desc: 'Suave, esponjosa y decorada con crema y frutas.',      price: 16500, stock: 8 },
+        { id: 'p5', img: 'personalizada.png', name: 'Personalizada', desc: 'Cuéntanos tu idea y la hacemos realidad.',                price: 22000, stock: 4 },
       ],
       orders: [
         {
-          id: 'O-0001', customer: { name: 'Ana Torres', phone: '555-0101', address: 'Calle 1 #23', note: '' },
-          items: [{ pid: 'p1', name: 'Hamburguesa clásica', price: 8.5, qty: 2 }, { pid: 'p5', name: 'Refresco', price: 2, qty: 2 }],
-          total: 21, payMethod: 'tarjeta', payStatus: 'aprobado', status: 'entregado', createdAt: t - 86400000,
+          id: 'O-0001', customer: { name: 'Ana Torres', phone: '555-0101', address: 'Calle 1 #23', note: 'para un cumpleaños' },
+          items: [{ pid: 'p3', name: 'Cheesecake', price: 20000, qty: 1 }],
+          total: 20000, payMethod: 'transferencia', payStatus: 'aprobado', status: 'entregado',
+          deliveryDate: ayer, createdAt: t - 86400000,
           history: [{ status: 'nuevo', at: t - 86400000 }, { status: 'entregado', at: t - 86400000 + 3600000 }],
         },
         {
-          id: 'O-0002', customer: { name: 'Luis Pérez', phone: '555-0102', address: 'Av. Central #45', note: 'sin cebolla' },
-          items: [{ pid: 'p3', name: 'Tacos (3 u)', price: 7, qty: 2 }, { pid: 'p4', name: 'Papas fritas', price: 3.5, qty: 1 }],
-          total: 17.5, payMethod: 'efectivo', payStatus: 'pendiente', status: 'nuevo', createdAt: t - 3600000,
+          id: 'O-0002', customer: { name: 'Luis Pérez', phone: '555-0102', address: 'Av. Central #45', note: 'sin azúcar extra' },
+          items: [{ pid: 'p1', name: 'Selva Negra', price: 18000, qty: 1 }],
+          total: 18000, payMethod: 'efectivo', payStatus: 'pendiente', status: 'nuevo',
+          deliveryDate: manana, createdAt: t - 3600000,
           history: [{ status: 'nuevo', at: t - 3600000 }],
         },
       ],
       customers: [
-        { phone: '555-0101', name: 'Ana Torres', orders: 1, spent: 21 },
-        { phone: '555-0102', name: 'Luis Pérez', orders: 1, spent: 17.5 },
+        { phone: '555-0101', name: 'Ana Torres', orders: 1, spent: 20000 },
+        { phone: '555-0102', name: 'Luis Pérez', orders: 1, spent: 18000 },
       ],
       notifications: [
         { kind: 'order', text: 'Sistema iniciado con datos de ejemplo.', at: '09:00:00' },
@@ -75,7 +79,7 @@ const Store = (() => {
   const prod = id => db.products.find(p => p.id === id);
 
   // ---------- sincronización entre pestañas ----------
-  const bus = 'BroadcastChannel' in window ? new BroadcastChannel('pedidos-express-v3') : null;
+  const bus = 'BroadcastChannel' in window ? new BroadcastChannel('tortas-pedidos-v1') : null;
   const subs = new Set();
   const emit = () => { for (const fn of subs) { try { fn(); } catch {} } };
   window.addEventListener('storage', e => { if (e.key === KEY || e.key === null) sync(); });
@@ -153,7 +157,7 @@ const Store = (() => {
       event('inventario', `stock reservado (${draft.items.length} artículos)`);
 
       let payStatus = 'pendiente';
-      if (draft.payMethod === 'tarjeta') {
+      if (draft.payMethod === 'transferencia') {
         event('pagos', 'autorizando tarjeta…');
         await sleep(lat());
         payStatus = draft.forceDecline ? 'rechazado' : (Math.random() < 0.9 ? 'aprobado' : 'rechazado');
@@ -172,6 +176,7 @@ const Store = (() => {
         items: draft.items.map(it => ({ ...it })),
         total: draft.items.reduce((s, it) => s + it.price * it.qty, 0),
         payMethod: draft.payMethod, payStatus, status: 'nuevo',
+        deliveryDate: draft.deliveryDate || '',
         createdAt: Date.now(), history: [{ status: 'nuevo', at: Date.now() }],
       };
       for (const it of order.items) { const p = prod(it.pid); p.stock -= it.qty; checkLow(p); }
@@ -237,7 +242,7 @@ const Store = (() => {
   return {
     get db() { return db; },
     LOW, NEXT, FLOW, STATUS_LABEL,
-    money, hora, ahora, esc,
+    money, fecha, hora, ahora, esc,
     subscribe, save, prod, event,
     placeOrder, advanceOrder, cancelOrder, restock, resetDemo,
   };

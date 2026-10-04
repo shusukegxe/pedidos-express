@@ -24,6 +24,7 @@ const app = (() => {
     bell: '<path d="M6.4 9a5.6 5.6 0 0 1 11.2 0c0 6 2.4 7.5 2.4 7.5H4S6.4 15 6.4 9"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/>',
     receipt: '<path d="M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5Z"/><path d="M14 2.5v5h5"/><path d="M9 12.5h6M9 16h6"/>',
     cash: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10h.01M18 14h.01"/>',
+    bank: '<path d="M3 22h18"/><path d="M6 18v-7M10 18v-7M14 18v-7M18 18v-7"/><path d="M12 2.5 20.5 7.5h-17Z"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
     refresh: '<path d="M3 12a9 9 0 1 0 2.6-6.3L3 8"/><path d="M3 3v5h5"/>',
     copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
@@ -69,6 +70,20 @@ const app = (() => {
     const [bg, fg] = TILE_COLORS[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % TILE_COLORS.length];
     return `<span class="tile" style="width:${size}px;height:${size}px;font-size:${fs}px;background:${bg};color:${fg}">${ini}</span>`;
   }
+
+  // foto real del producto (assets/); si no carga, cae al monograma
+  function pimg(p, size) {
+    return `<img class="pimg" src="assets/${p.img}" alt="${Store.esc(p.name)}" loading="lazy" style="width:${size}px;height:${size}px" data-mono="${Store.esc(p.name)}" data-size="${size}">`;
+  }
+  document.addEventListener('error', e => {
+    const t = e.target;
+    if (t.tagName === 'IMG' && t.dataset.mono) {
+      const s = +t.dataset.size;
+      const wrap = document.createElement('span');
+      wrap.innerHTML = tile(t.dataset.mono, s, Math.round(s * .36));
+      t.replaceWith(wrap.firstChild);
+    }
+  }, true);
 
   // ---------- helpers de UI ----------
   function toast(msg, ic = 'bell') {
@@ -124,8 +139,8 @@ const app = (() => {
         viewEl.innerHTML = `
           <div class="view-head">
             <div>
-              <h1>Tienda</h1>
-              <div class="sub">Haz tu pedido — el panel del negocio lo recibe al instante.</div>
+              <h1>Hacer un pedido</h1>
+              <div class="sub">Elige tus tortas — las horneamos el mismo día de la entrega.</div>
             </div>
             <div class="seg" id="catalog-filter" hidden></div>
           </div>
@@ -135,7 +150,7 @@ const app = (() => {
               <div class="card-head">
                 <h2>Catálogo</h2>
                 <div style="position:relative">
-                  <input id="prod-search" class="search" placeholder="Buscar producto…" style="padding-left:32px">
+                  <input id="prod-search" class="search" placeholder="Buscar torta…" style="padding-left:32px">
                   <span style="position:absolute;left:9px;top:7px;color:var(--text-3)">${icon('search', 15)}</span>
                 </div>
               </div>
@@ -149,20 +164,24 @@ const app = (() => {
                 <div class="field" style="margin-top:8px"><label>Nombre</label><input id="f-name" placeholder="Ana Torres"></div>
                 <div class="field"><label>Teléfono</label><input id="f-phone" placeholder="555-0101"></div>
                 <div class="field"><label>Dirección de entrega</label><input id="f-addr" placeholder="Calle 1 #23"></div>
-                <div class="field"><label>Nota <span style="color:var(--text-3)">(opcional)</span></label><input id="f-note" placeholder="tocar el timbre dos veces"></div>
-                <div class="field"><label>Método de pago</label></div>
+                <div class="field"><label>Fecha de entrega</label><input type="date" id="f-date"></div>
+                <div class="field"><label>Mensaje en la torta <span style="color:var(--text-3)">(opcional)</span></label><input id="f-note" placeholder="Feliz cumpleaños, Mamá"></div>
+                <div class="field"><label>Forma de pago</label></div>
                 <div class="pay-opt">
-                  <label><input type="radio" name="pay" value="efectivo" checked> ${icon('cash', 15)} Efectivo</label>
-                  <label><input type="radio" name="pay" value="tarjeta"> ${icon('card', 15)} Tarjeta</label>
+                  <label><input type="radio" name="pay" value="transferencia" checked> ${icon('bank', 15)} Transferencia</label>
+                  <label><input type="radio" name="pay" value="efectivo"> ${icon('cash', 15)} Efectivo</label>
                 </div>
                 <div class="mini-check" id="decline-wrap" hidden>
-                  <input type="checkbox" id="f-decline"><label for="f-decline" style="margin:0;cursor:pointer">Forzar rechazo de pago (demo)</label>
+                  <input type="checkbox" id="f-decline"><label for="f-decline" style="margin:0;cursor:pointer">Forzar rechazo de la transferencia (demo)</label>
                 </div>
                 <button id="btn-checkout" class="btn primary" style="width:100%;padding:10px" data-act="checkout">${icon('cart', 15)} Confirmar pedido</button>
               </div>
             </section>
           </div>`;
         document.getElementById('prod-search').addEventListener('input', updateProducts);
+        const fDate = document.getElementById('f-date');
+        fDate.min = new Date().toISOString().slice(0, 10);
+        fDate.value = fDate.min;
         updateTracker(); updateProducts(); updateCart();
       },
       update() { updateTracker(); updateProducts(); updateCart(); },
@@ -283,8 +302,9 @@ const app = (() => {
           : `<button class="btn primary sm" data-act="add" data-id="${p.id}">${icon('plus', 13)} Agregar</button>`;
       return `
         <div class="product">
-          ${tile(p.name, 42, 15)}
+          ${pimg(p, 56)}
           <div class="name">${Store.esc(p.name)}</div>
+          <div class="desc">${Store.esc(p.desc || '')}</div>
           <div class="price">${Store.money(p.price)}</div>
           <div class="stock-line"><span class="dot" style="background:${stockDot(p.stock)}"></span>${stockTxt(p.stock)}</div>
           ${action}
@@ -324,13 +344,13 @@ const app = (() => {
       const p = Store.prod(pid);
       return `
         <div class="cart-row">
-          ${tile(p.name, 36, 13)}
+          ${pimg(p, 34)}
           <div class="ci"><div class="n">${Store.esc(p.name)}</div><div class="p">${Store.money(p.price)} c/u</div></div>
           <span class="qty"><button data-act="dec" data-id="${pid}">${icon('minus', 13)}</button><span class="n">${q}</span><button data-act="inc" data-id="${pid}" ${q >= p.stock ? 'disabled' : ''}>${icon('plus', 13)}</button></span>
           <span class="sub">${Store.money(p.price * q)}</span>
           <button class="rm" data-act="remove" data-id="${pid}" title="Quitar">${icon('x', 14)}</button>
         </div>`;
-    }).join('') : `<div class="cart-empty">${icon('cart', 22)}<div style="margin-top:6px">El carrito está vacío.<br>Agrega productos del catálogo.</div></div>`;
+    }).join('') : `<div class="cart-empty">${icon('cart', 22)}<div style="margin-top:6px">El carrito está vacío.<br>Agrega tortas del catálogo.</div></div>`;
     document.getElementById('total-row').innerHTML = `<div class="total-row"><span class="t">Total</span><span class="v">${Store.money(total)}</span></div>`;
     const btn = document.getElementById('btn-checkout');
     btn.disabled = !entries.length || ui.busy;
@@ -344,6 +364,7 @@ const app = (() => {
     return {
       name: $('#f-name').value.trim(), phone: $('#f-phone').value.trim(),
       address: $('#f-addr').value.trim(), note: $('#f-note').value.trim(),
+      deliveryDate: $('#f-date').value || '',
       payMethod: ui.payMethod, forceDecline: $('#f-decline').checked,
       items: Object.entries(ui.cart).map(([pid, qty]) => { const p = Store.prod(pid); return { pid, name: p.name, price: p.price, qty }; }),
     };
@@ -360,20 +381,33 @@ const app = (() => {
         ui.lastOrderId = res.order.id;
         ui.lastSeenStatus = res.order.status;
         ui.cart = {};
+        Store.event('cliente', `confirma ${res.order.id}`);
+        const entrega = res.order.deliveryDate ? Store.fecha(res.order.deliveryDate) : 'lo antes posible';
+        const waTxt = encodeURIComponent(
+          `Hola, Tortas · Hechas a Mano. Quiero hacer un pedido:\n` +
+          res.order.items.map(it => `• ${it.qty}× ${it.name}`).join('\n') +
+          `\nTotal: ${Store.money(res.order.total)} (${res.order.payMethod})` +
+          `\nEntrega: ${entrega}` +
+          `\nNombre: ${res.order.customer.name} — Dirección: ${res.order.customer.address}` +
+          (res.order.customer.note ? `\nMensaje en la torta: "${res.order.customer.note}"` : '')
+        );
         openModal(`
           <div class="modal-ic" style="background:var(--green-soft);color:var(--green-text)">${icon('check', 22)}</div>
           <h3>Pedido ${res.order.id} confirmado</h3>
           <div class="rows">
             ${res.order.items.map(it => `<div><span>${it.qty}× ${Store.esc(it.name)}</span><span>${Store.money(it.price * it.qty)}</span></div>`).join('')}
-            <div><span><b>Total</b> · ${res.order.payMethod === 'tarjeta' ? 'tarjeta' : 'efectivo'}</span><b>${Store.money(res.order.total)}</b></div>
+            <div><span><b>Total</b> · ${res.order.payMethod}</span><b>${Store.money(res.order.total)}</b></div>
           </div>
-          <p>Pago: <b>${res.order.payStatus}</b>. Deja la pestaña abierta: cuando el panel avance tu pedido, te avisamos aquí.</p>
-          <div class="btn-row"><button class="btn primary" data-act="modal-close">Entendido</button></div>`);
-        Store.event('cliente', `confirma ${res.order.id}`);
+          <p>Pago: <b>${res.order.payStatus}</b> · Entrega: <b>${entrega}</b>.</p>
+          <p class="dim">Te escribimos para confirmar. Deja la pestaña abierta y verás el avance del pedido aquí mismo.</p>
+          <div class="btn-row">
+            <button class="btn" data-act="modal-close">Cerrar</button>
+            <a class="btn wa" href="https://wa.me/?text=${waTxt}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+          </div>`);
       } else {
         openModal(`
           <div class="modal-ic" style="background:var(--red-soft);color:var(--red-text)">${icon('x', 22)}</div>
-          <h3>Pago rechazado</h3>
+          <h3>Transferencia rechazada</h3>
           <p>${Store.esc(res.reason)}</p>
           <p class="dim">La pasarela simulada rechaza al marcar la casilla de demo, o el 10% de las veces. El carrito se conserva para reintentar.</p>
           <div class="btn-row"><button class="btn primary" data-act="modal-close">Entendido</button></div>`);
@@ -394,7 +428,7 @@ const app = (() => {
     const validos = db.orders.filter(o => o.status !== 'cancelado').length;
     const pendientes = db.orders.filter(o => ['nuevo', 'preparando', 'enviado'].includes(o.status)).length;
     document.getElementById('kpis').innerHTML = [
-      ['receipt', 'indigo', 'Pedidos hoy', todays.length],
+      ['receipt', 'gold', 'Pedidos hoy', todays.length],
       ['cash', 'green', 'Ingresos', Store.money(ingresos)],
       ['zap', 'blue', 'Ticket promedio', Store.money(ingresos / Math.max(1, validos))],
       ['clock', 'amber', 'Pendientes', pendientes],
@@ -421,11 +455,11 @@ const app = (() => {
     const list = filteredOrders();
     document.getElementById('orders-body').innerHTML = list.map(o => `
       <tr class="${o.status === 'cancelado' ? 'dim-row' : ''}">
-        <td><div class="strong mono">${o.id}</div><div class="cell-sub">${Store.hora(o.createdAt)}</div></td>
+        <td><div class="strong mono">${o.id}</div><div class="cell-sub">${Store.hora(o.createdAt)}${o.deliveryDate ? ` · entrega ${Store.fecha(o.deliveryDate)}` : ""}</div></td>
         <td><div>${Store.esc(o.customer.name)}</div><div class="cell-sub">${Store.esc(o.customer.phone)} · ${Store.esc(o.customer.address)}</div></td>
         <td class="items-cell" title="${o.items.map(it => `${it.qty}× ${Store.esc(it.name)}`).join(', ')}">${o.items.map(it => `${it.qty}× ${Store.esc(it.name)}`).join(', ')}</td>
         <td class="num">${Store.money(o.total)}</td>
-        <td><span class="badge ${PAY[o.payStatus]}"><span class="dot"></span>${o.payStatus}${o.payMethod === 'efectivo' ? ' · efvo.' : ''}</span></td>
+        <td><span class="badge ${PAY[o.payStatus]}"><span class="dot"></span>${o.payStatus}${o.payMethod === 'efectivo' ? ' · efvo.' : ' · transf.'}</span></td>
         <td><span class="badge ${META[o.status].badge}"><span class="dot"></span>${STATUS_LABEL[o.status]}</span></td>
         <td class="row-actions">
           ${Store.NEXT[o.status] ? `<button class="btn sm" data-act="advance" data-id="${o.id}" title="Avanzar a ${STATUS_LABEL[Store.NEXT[o.status]]}">${icon('arrow', 14)} ${STATUS_LABEL[Store.NEXT[o.status]]}</button>` : ''}
@@ -437,21 +471,21 @@ const app = (() => {
   function updateTab() {
     const db = Store.db;
     document.getElementById('panel-tabs').innerHTML = [
-      ['inventario', 'Inventario'], ['clientes', 'Clientes'], ['actividad', 'Actividad'],
+      ['inventario', 'Disponibilidad'], ['clientes', 'Clientes'], ['actividad', 'Actividad'],
     ].map(([v, l]) => `<button class="${ui.tab === v ? 'on' : ''}" data-act="tab" data-v="${v}">${l}</button>`).join('');
 
     const body = document.getElementById('tab-body');
-    document.getElementById('tab-title').textContent = { inventario: 'Inventario', clientes: 'Clientes', actividad: 'Actividad reciente' }[ui.tab];
+    document.getElementById('tab-title').textContent = { inventario: 'Disponibilidad del dia', clientes: 'Clientes', actividad: 'Actividad reciente' }[ui.tab];
 
     if (ui.tab === 'inventario') {
       body.innerHTML = `<table class="table">
         <thead><tr><th>Producto</th><th class="num" style="text-align:right">Precio</th><th>Stock</th><th></th></tr></thead>
         <tbody>${db.products.map(p => `
           <tr>
-            <td><div style="display:flex;align-items:center;gap:10px">${tile(p.name, 30, 11)}<b>${Store.esc(p.name)}</b></div></td>
+            <td><div style="display:flex;align-items:center;gap:10px">${pimg(p, 30)}<b>${Store.esc(p.name)}</b></div></td>
             <td class="num">${Store.money(p.price)}</td>
             <td><div class="stockbar"><span class="bar"><i style="width:${Math.min(100, p.stock / 30 * 100)}%;background:${stockDot(p.stock)}"></i></span><span style="font-size:12.5px;color:var(--text-2)">${p.stock} u</span></div></td>
-            <td class="row-actions"><button class="btn sm" data-act="restock" data-id="${p.id}">+5</button></td>
+            <td class="row-actions"><button class="btn sm" data-act="restock" data-id="${p.id}" title="Ampliar capacidad del dia">+5</button></td>
           </tr>`).join('')}</tbody>
       </table>`;
     } else if (ui.tab === 'clientes') {
@@ -463,7 +497,7 @@ const app = (() => {
       </table>`;
     } else {
       const IC = { order: 'receipt', stock: 'package', pay: 'card', client: 'users' };
-      const CL = { order: 'indigo', stock: 'amber', pay: 'green', client: 'blue' };
+      const CL = { order: 'gold', stock: 'amber', pay: 'green', client: 'blue' };
       body.innerHTML = `<div class="feed">${db.notifications.map(n => `
         <div class="feed-item">
           <span class="ic ${CL[n.kind] || 'indigo'}">${icon(IC[n.kind] || 'bell', 15)}</span>
@@ -578,7 +612,7 @@ const app = (() => {
   document.addEventListener('change', e => {
     if (e.target.name === 'pay') {
       ui.payMethod = e.target.value;
-      document.getElementById('decline-wrap').hidden = ui.payMethod !== 'tarjeta';
+      document.getElementById('decline-wrap').hidden = ui.payMethod !== 'transferencia';
     }
   });
 
