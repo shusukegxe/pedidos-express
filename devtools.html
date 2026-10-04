@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DevTools · PedidosExpress</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">🛠️ DevTools</div>
+  <nav>
+    <a href="index.html">inicio</a>
+    <a href="cliente.html">cliente</a>
+    <a href="manager.html">manager</a>
+    <a class="activo" href="devtools.html">devtools</a>
+  </nav>
+  <button id="btn-reset" class="btn small ghost">Reiniciar demo</button>
+</header>
+
+<main>
+  <div class="arch">
+    <p class="arch-note">La arquitectura del sistema, en vivo: cada caja cuenta los eventos que le llegan
+    desde <b>cualquier</b> pestaña (cliente, manager o esta). Abajo, la traza completa y los datos crudos.</p>
+
+    <div class="arch-box big" id="arq-cliente">
+      <div class="arq-name">👤 Cliente</div><div class="arq-count">0 eventos</div><div class="arq-last">—</div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="arch-box big" id="arq-web">
+      <div class="arq-name">🌐 Web / App de pedidos</div><div class="arq-count">0 eventos</div><div class="arq-last">—</div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="arch-box big" id="arq-api">
+      <div class="arq-name">⚙️ Backend · API + datos</div><div class="arq-count">0 eventos</div><div class="arq-last">—</div>
+    </div>
+    <div class="fan" style="margin-top:16px">
+      <div class="fan-cell"><div class="stub"></div>
+        <div class="arch-box" id="arq-pedidos"><div class="arq-name">🧾 Pedidos</div><div class="arq-count">0</div><div class="arq-last">—</div></div>
+      </div>
+      <div class="fan-cell"><div class="stub"></div>
+        <div class="arch-box" id="arq-inventario"><div class="arq-name">📦 Inventario</div><div class="arq-count">0</div><div class="arq-last">—</div></div>
+      </div>
+      <div class="fan-cell"><div class="stub"></div>
+        <div class="arch-box" id="arq-clientes"><div class="arq-name">👥 Clientes</div><div class="arq-count">0</div><div class="arq-last">—</div></div>
+      </div>
+      <div class="fan-cell"><div class="stub"></div>
+        <div class="arch-box" id="arq-pagos"><div class="arq-name">💳 Pagos</div><div class="arq-count">0</div><div class="arq-last">—</div></div>
+      </div>
+      <div class="fan-cell"><div class="stub"></div>
+        <div class="arch-box" id="arq-notificaciones"><div class="arq-name">🔔 Notificaciones</div><div class="arq-count">0</div><div class="arq-last">—</div></div>
+      </div>
+    </div>
+    <div class="fan-merge">
+      <div class="stub2"></div><div class="stub2"></div><div class="stub2"></div><div class="stub2"></div><div class="stub2"></div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="arch-box big" id="arq-panel">
+      <div class="arq-name">📊 Panel del negocio</div><div class="arq-count">0 eventos</div><div class="arq-last">—</div>
+    </div>
+  </div>
+
+  <div class="dev-grid" style="margin-top:20px">
+    <div class="card">
+      <h3>🛰️ Monitor de flujo <select id="dev-filter" style="width:auto;margin-left:8px"></select></h3>
+      <div class="dev-monitor" id="mon-list"></div>
+    </div>
+    <div>
+      <div class="card">
+        <h3>🗄️ Datos crudos (localStorage)</h3>
+        <pre id="db-view" class="dbpre"></pre>
+        <div class="dev-actions">
+          <button id="btn-copy" class="btn small">Copiar JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="core.js"></script>
+<script>
+'use strict';
+
+let filtro = 'todos';
+
+function renderMonitor() {
+  const log = Core.flowLog();
+  const visibles = filtro === 'todos' ? log : log.filter(e => e.mod === filtro);
+  document.getElementById('mon-list').innerHTML = visibles.map(e =>
+    `<div class="mon-row"><span class="mon-t">${e.at}</span><span class="chip" style="color:${Core.MOD_COLOR[e.mod]}">${e.mod}</span><span>${Core.esc(e.msg)}</span></div>`
+  ).join('') || '<div class="empty">Sin eventos aún — haz algo en el cliente o el manager</div>';
+}
+
+function updateArq(mod, msg) {
+  const box = document.getElementById('arq-' + mod);
+  if (!box) return;
+  box.querySelector('.arq-count').textContent = Core.counts(Core.flowLog())[mod] + ' eventos';
+  box.querySelector('.arq-last').textContent = msg;
+  box.classList.remove('pulse'); void box.offsetWidth; box.classList.add('pulse');
+  setTimeout(() => box.classList.remove('pulse'), 380);
+}
+
+function renderArq() {
+  const log = Core.flowLog();
+  const c = Core.counts(log);
+  for (const m of Core.MODS) {
+    const box = document.getElementById('arq-' + m);
+    box.querySelector('.arq-count').textContent = c[m] + ' eventos';
+    const last = log.find(e => e.mod === m);
+    box.querySelector('.arq-last').textContent = last ? last.msg : '—';
+  }
+}
+
+function renderDb() {
+  document.getElementById('db-view').textContent = JSON.stringify(Core.db, null, 2);
+}
+
+function renderAll() { renderMonitor(); renderArq(); renderDb(); }
+
+// al registrarse tras el primer render, este listener solo refresca cuando otra
+// pestaña mueve algo; el pulso va a las cajas cuyo último evento cambió
+Core.onSync(() => {
+  const sig = e => (e ? e.at + '|' + e.msg : '');
+  const logA = Core.flowLog();
+  const before = {};
+  for (const m of Core.MODS) before[m] = sig(logA.find(x => x.mod === m));
+  renderAll();
+  const logB = Core.flowLog();
+  for (const m of Core.MODS) {
+    const e = logB.find(x => x.mod === m);
+    if (e && sig(e) !== before[m]) updateArq(m, e.msg);
+  }
+});
+
+const sel = document.getElementById('dev-filter');
+sel.innerHTML = '<option value="todos">todos</option>' + Core.MODS.map(m => `<option value="${m}">${m}</option>`).join('');
+sel.addEventListener('change', () => { filtro = sel.value; renderMonitor(); });
+
+document.getElementById('btn-copy').addEventListener('click', () => {
+  navigator.clipboard.writeText(JSON.stringify(Core.db, null, 2))
+    .then(() => Core.toast('📋 JSON copiado'))
+    .catch(() => Core.toast('⚠️ No se pudo copiar'));
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  if (confirm('¿Reiniciar la demo? Se borran pedidos, clientes y notificaciones en TODAS las pestañas.')) {
+    Core.resetDemo();
+    renderAll();
+  }
+});
+
+renderAll();
+</script>
+</body>
+</html>

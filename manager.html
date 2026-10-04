@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manager · PedidosExpress</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">📊 Manager</div>
+  <nav>
+    <a href="index.html">inicio</a>
+    <a href="cliente.html">cliente</a>
+    <a class="activo" href="manager.html">manager</a>
+    <a href="devtools.html">devtools</a>
+  </nav>
+  <span class="dim">se actualiza solo cuando entra un pedido nuevo</span>
+</header>
+
+<main>
+  <div id="kpis"></div>
+  <div class="card">
+    <h3>Pedidos</h3>
+    <table>
+      <thead><tr><th>ID</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody id="orders-body"></tbody>
+    </table>
+  </div>
+  <div class="panel-grid">
+    <div class="card">
+      <h3>Inventario</h3>
+      <table>
+        <thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th></th></tr></thead>
+        <tbody id="inv-body"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Clientes</h3>
+      <table>
+        <thead><tr><th>Nombre</th><th>Teléfono</th><th>Pedidos</th><th>Consumo</th></tr></thead>
+        <tbody id="cust-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Notificaciones</h3>
+    <div id="notif-list"></div>
+  </div>
+</main>
+
+<script src="core.js"></script>
+<script>
+'use strict';
+
+function renderPanel() {
+  const db = Core.db;
+
+  const hoy = new Date().toDateString();
+  const todays = db.orders.filter(o => new Date(o.createdAt).toDateString() === hoy);
+  const ingresos = db.orders.filter(o => o.payStatus === 'aprobado' || o.payStatus === 'cobrado').reduce((s, o) => s + o.total, 0);
+  const validos = db.orders.filter(o => o.status !== 'cancelado').length;
+  const pendientes = db.orders.filter(o => ['nuevo', 'preparando', 'enviado'].includes(o.status)).length;
+  document.getElementById('kpis').innerHTML = [
+    ['Pedidos hoy', todays.length], ['Ingresos', Core.money(ingresos)],
+    ['Ticket promedio', Core.money(ingresos / Math.max(1, validos))], ['Pendientes', pendientes],
+  ].map(([k, v]) => `<div class="kpi"><div class="kpi-v">${v}</div><div class="kpi-k">${k}</div></div>`).join('');
+
+  document.getElementById('orders-body').innerHTML = db.orders.map(o => `
+    <tr>
+      <td><b>${o.id}</b><div class="dim">${Core.hora(o.createdAt)}</div></td>
+      <td>${Core.esc(o.customer.name)}<div class="dim">${Core.esc(o.customer.phone)}</div></td>
+      <td class="items">${o.items.map(it => `${it.qty}× ${Core.esc(it.name)}`).join(', ')}</td>
+      <td>${Core.money(o.total)}</td>
+      <td><span class="pay pay-${o.payStatus}">${o.payStatus}${o.payMethod === 'efectivo' ? ' · efectivo' : ''}</span></td>
+      <td><span class="st st-${o.status}">${Core.STATUS_TXT[o.status]}</span></td>
+      <td class="actions">
+        ${Core.NEXT[o.status] ? `<button class="btn small" data-advance="${o.id}">→ ${Core.STATUS_TXT[Core.NEXT[o.status]]}</button>` : ''}
+        ${!['entregado', 'cancelado'].includes(o.status) ? `<button class="btn small ghost" data-cancel="${o.id}">Cancelar</button>` : ''}
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">Sin pedidos todavía</td></tr>';
+
+  document.getElementById('inv-body').innerHTML = db.products.map(p => `
+    <tr>
+      <td>${p.emoji} ${Core.esc(p.name)}</td>
+      <td>${Core.money(p.price)}</td>
+      <td><span class="${p.stock <= Core.LOW ? 'bad-txt' : ''}">${p.stock} u</span> ${p.stock <= Core.LOW ? '<span class="st st-bajo">bajo</span>' : ''}</td>
+      <td><button class="btn small" data-restock="${p.id}">+5</button></td>
+    </tr>`).join('');
+
+  document.getElementById('cust-body').innerHTML = db.customers.map(c => `
+    <tr><td>${Core.esc(c.name)}</td><td>${Core.esc(c.phone)}</td><td>${c.orders}</td><td>${Core.money(c.spent)}</td></tr>`).join('')
+    || '<tr><td colspan="4" class="empty">Sin clientes</td></tr>';
+
+  document.getElementById('notif-list').innerHTML = db.notifications.map(n =>
+    `<div class="notif"><span class="notif-icon">${n.icon}</span><div><div>${Core.esc(n.text)}</div><div class="dim">${n.at}</div></div></div>`).join('')
+    || '<div class="empty">Sin notificaciones</div>';
+}
+
+// cualquier cambio hecho en otra pestaña (cliente comprando, devtools reseteando)
+// redibuja el panel al instante
+Core.onSync(renderPanel);
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-advance],[data-cancel],[data-restock]');
+  if (!t) return;
+  if (t.dataset.advance) {
+    Core.advanceOrder(t.dataset.advance).then(renderPanel).catch(err => Core.toast('⚠️ ' + err.message));
+  } else if (t.dataset.cancel) {
+    if (confirm('¿Cancelar ' + t.dataset.cancel + '?')) {
+      Core.cancelOrder(t.dataset.cancel).then(renderPanel).catch(err => Core.toast('⚠️ ' + err.message));
+    }
+  } else if (t.dataset.restock) {
+    Core.restock(t.dataset.restock).then(renderPanel).catch(err => Core.toast('⚠️ ' + err.message));
+  }
+});
+
+renderPanel();
+</script>
+</body>
+</html>
