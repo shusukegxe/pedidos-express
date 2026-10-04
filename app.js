@@ -237,7 +237,7 @@ const app = (() => {
             <div><span><b>Total</b> · ${res.order.payMethod}</span><b>${Store.money(res.order.total)}</b></div>
           </div>
           <p>Pago: <b>${res.order.payStatus}</b> · Entrega: <b>${entrega}</b>.</p>
-          <p class="dim">Te escribimos para confirmar. Abre el Panel del negocio para ver tu pedido avanzar en vivo.</p>
+          <p class="dim">Te escribimos para confirmar. Deja la pestaña abierta y verás el avance de tu pedido aquí mismo.</p>
           <div class="btn-row">
             <button class="btn" data-act="modal-close">Cerrar</button>
             <a class="btn wa" href="https://wa.me/?text=${waTxt}" target="_blank" rel="noopener">Enviar por WhatsApp</a>

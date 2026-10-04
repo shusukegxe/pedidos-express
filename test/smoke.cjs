@@ -21,9 +21,11 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   // 1. render inicial: SOLO pedidos (sin panel ni devtools en el contenido)
   ok(d.querySelectorAll('.product').length === 5, 'tienda: 5 tortas renderizadas');
   ok(d.querySelectorAll('.product img.pimg').length === 5, 'productos: foto real en cada tarjeta');
-  ok(d.querySelectorAll('.nav a').length === 3, 'sidebar: 3 apps enlazadas');
-  ok(d.querySelector('#view').textContent.indexOf('Panel del negocio') === -1 && d.querySelector('#view').textContent.indexOf('Registro de peticiones') === -1,
-    'página: el contenido es solo de pedidos (sin panel ni devtools)');
+  ok(d.querySelectorAll('.nav a').length === 0, 'sidebar: sin enlaces a otras apps');
+  const uiTxt = d.getElementById('app').textContent;
+  ok(uiTxt.indexOf('Panel del negocio') === -1 && uiTxt.indexOf('DevTools') === -1
+    && uiTxt.indexOf('tortas-manager') === -1 && uiTxt.indexOf('tortas-devtools') === -1,
+    'página: solo pedidos — sin rastro del panel o las devtools en la UI');
   const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{25A0}-\u{25FF}]/u;
   ok(!EMOJI.test(d.body.textContent), 'UI sin emojis ni glifos decorativos');
 
