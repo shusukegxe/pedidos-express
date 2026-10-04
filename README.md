@@ -1,9 +1,11 @@
-# 🧾 PedidosExpress v3
+# PedidosExpress
 
 Prototipo profesional de un sistema de pedidos en una sola página (SPA sin framework):
 la "base de datos" es `localStorage`, la "API" es un enrutador simulado con latencia y
 registro de peticiones, y las tres aplicaciones conviven en la misma interfaz con router
 hash — compartiendo datos y tráfico en vivo entre pestañas del navegador.
+Tipografía Inter (Google Fonts), iconografía SVG inline, monogramas para productos;
+cero emojis en la interfaz.
 
 **Demo en vivo (GitHub Pages):** https://shusukegxe.github.io/pedidos-express/
 
@@ -60,8 +62,16 @@ MercadoPago. La separación core/vistas está pensada para que ese cambio sea di
 
 ## Changelog
 
+- **v3.1** — pulido visual: fuente Inter, monogramas deterministas en vez de emojis,
+  flechas del diagrama en CSS puro, numeración tabular en tablas y KPIs.
 - **v3** — rediseño completo: SPA con router, design system propio, API con log
   estructurado (método/ruta/estado/latencia), seguimiento visual de pedidos, filtros y
   búsqueda. Reemplaza la versión de 3 páginas y el monolito (en el historial de git).
 - **v2** — 3 apps separadas (cliente/manager/devtools) compartiendo localStorage.
 - **v1** — prototipo monolítico en un solo HTML.
+
+## Tests
+
+`test/smoke.cjs` verifica el flujo completo (carrito, checkout, seguimiento, avance de
+estado, registro de devtools, persistencia y ausencia de emojis) con código real sobre
+jsdom: `npm i jsdom && node test/smoke.cjs`.

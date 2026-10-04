@@ -5,7 +5,7 @@
    API real; toda llamada queda registrada con método, ruta, estado y latencia. */
 
 const Store = (() => {
-  const KEY = 'pedidos-express-v3';
+  const KEY = 'pedidos-express-v3-1';
   const LOW = 3;
 
   // ---------- utilidades ----------
@@ -22,12 +22,12 @@ const Store = (() => {
     return {
       seq: 3,
       products: [
-        { id: 'p1', emoji: '🍔', name: 'Hamburguesa clásica', price: 8.5,  stock: 12 },
-        { id: 'p2', emoji: '🍕', name: 'Pizza pepperoni',     price: 11,   stock: 8  },
-        { id: 'p3', emoji: '🌮', name: 'Tacos (3 u)',        price: 7,    stock: 15 },
-        { id: 'p4', emoji: '🍟', name: 'Papas fritas',        price: 3.5,  stock: 20 },
-        { id: 'p5', emoji: '🥤', name: 'Refresco',            price: 2,    stock: 30 },
-        { id: 'p6', emoji: '🍰', name: 'Brownie',             price: 4,    stock: 5  },
+        { id: 'p1', name: 'Hamburguesa clásica', price: 8.5,  stock: 12 },
+        { id: 'p2', name: 'Pizza pepperoni',     price: 11,   stock: 8  },
+        { id: 'p3', name: 'Tacos (3 u)',         price: 7,    stock: 15 },
+        { id: 'p4', name: 'Papas fritas',        price: 3.5,  stock: 20 },
+        { id: 'p5', name: 'Refresco',            price: 2,    stock: 30 },
+        { id: 'p6', name: 'Brownie',             price: 4,    stock: 5  },
       ],
       orders: [
         {

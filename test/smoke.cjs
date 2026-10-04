@@ -21,6 +21,9 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   // 1. render inicial de la tienda
   ok(d.querySelectorAll('.product').length === 6, 'tienda: 6 productos renderizados');
   ok(d.querySelectorAll('.nav a').length === 3, 'sidebar: 3 apps en el menú');
+  ok(!!d.querySelector('.product .tile'), 'productos: monogramas en vez de emojis');
+  const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{25A0}-\u{25FF}]/u;
+  ok(!EMOJI.test(d.body.textContent), 'UI sin emojis ni glifos decorativos');
 
   // 2. carrito (tras agregar, el botón se convierte en stepper +/−)
   d.querySelector('[data-act="add"][data-id="p1"]').click();
@@ -77,8 +80,9 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   d.querySelector('[data-act="filter"][data-v="entregados"]').click();
   await sleep(50);
   ok(!d.querySelector('#orders-body').textContent.includes('O-0003'), 'panel: filtro entregados oculta O-0003');
-  const persisted = JSON.parse(dom.window.localStorage.getItem('pedidos-express-v3'));
+  const persisted = JSON.parse(dom.window.localStorage.getItem('pedidos-express-v3-1'));
   ok(persisted.orders.length === 3 && persisted.seq === 4, 'persistencia: localStorage con 3 pedidos y seq=4');
+  ok(!EMOJI.test(JSON.stringify(persisted.products)), 'datos: seed sin emojis');
 
   console.log(fails ? `\n${fails} FALLOS` : '\nTODO OK');
   process.exit(fails ? 1 : 0);

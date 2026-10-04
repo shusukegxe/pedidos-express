@@ -58,6 +58,18 @@ const app = (() => {
   const stockDot = n => n <= 0 ? 'var(--red)' : n <= Store.LOW ? 'var(--amber)' : 'var(--green)';
   const stockTxt = n => n <= 0 ? 'Agotado' : n <= Store.LOW ? `Bajo stock · ${n}` : `${n} en stock`;
 
+  // monograma determinista: iniciales del producto sobre paleta suave
+  const TILE_COLORS = [
+    ['#eef2ff', '#4f46e5'], ['#ecfdf3', '#027a48'], ['#eff8ff', '#175cd3'],
+    ['#fffaeb', '#b54708'], ['#f4f3ff', '#6938ef'], ['#f2f4f7', '#475467'],
+  ];
+  function tile(name, size, fs) {
+    const letras = name.split(/\s+/).map(w => (w.match(/[a-záéíóúñü]/i) || [])[0]).filter(Boolean).map(s => s.toUpperCase());
+    const ini = letras.length > 1 ? letras.slice(0, 2).join('') : name.replace(/[^a-záéíóúñü]/gi, '').slice(0, 2).toUpperCase();
+    const [bg, fg] = TILE_COLORS[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % TILE_COLORS.length];
+    return `<span class="tile" style="width:${size}px;height:${size}px;font-size:${fs}px;background:${bg};color:${fg}">${ini}</span>`;
+  }
+
   // ---------- helpers de UI ----------
   function toast(msg, ic = 'bell') {
     const el = document.createElement('div');
@@ -211,9 +223,9 @@ const app = (() => {
               <div class="card-body">
                 <div class="arch">
                   <div class="arch-box big" id="arq-cliente"><div class="t">Cliente</div><div class="m" id="arq-cliente-c">—</div></div>
-                  <div class="arrow">▼</div>
+                  <div class="arrow"></div>
                   <div class="arch-box big" id="arq-web"><div class="t">Web / App de pedidos</div><div class="m" id="arq-web-c">—</div></div>
-                  <div class="arrow">▼</div>
+                  <div class="arrow"></div>
                   <div class="arch-box big" id="arq-api"><div class="t">Backend · API + datos</div><div class="m" id="arq-api-c">—</div></div>
                   <div class="fan" style="margin-top:14px">
                     ${['pedidos', 'inventario', 'clientes', 'pagos', 'notificaciones'].map(m => `
@@ -224,7 +236,7 @@ const app = (() => {
                   <div class="fan-merge" style="width:100%">
                     <div class="stub2"></div><div class="stub2"></div><div class="stub2"></div><div class="stub2"></div><div class="stub2"></div>
                   </div>
-                  <div class="arrow">▼</div>
+                  <div class="arrow"></div>
                   <div class="arch-box big" id="arq-panel"><div class="t">Panel del negocio</div><div class="m" id="arq-panel-c">—</div></div>
                 </div>
               </div>
@@ -271,7 +283,7 @@ const app = (() => {
           : `<button class="btn primary sm" data-act="add" data-id="${p.id}">${icon('plus', 13)} Agregar</button>`;
       return `
         <div class="product">
-          <div class="thumb">${p.emoji}</div>
+          ${tile(p.name, 42, 15)}
           <div class="name">${Store.esc(p.name)}</div>
           <div class="price">${Store.money(p.price)}</div>
           <div class="stock-line"><span class="dot" style="background:${stockDot(p.stock)}"></span>${stockTxt(p.stock)}</div>
@@ -307,12 +319,12 @@ const app = (() => {
   function updateCart() {
     const entries = Object.entries(ui.cart);
     const total = entries.reduce((s, [pid, q]) => s + Store.prod(pid).price * q, 0);
-    document.getElementById('cart-count').textContent = entries.reduce((s, [, q]) => s + q, 0) + (entries.length === 1 && entries[0][1] === 1 ? ' item' : ' items');
+    document.getElementById('cart-count').textContent = entries.length ? `${entries.reduce((s, [, q]) => s + q, 0)} items` : 'Vacío';
     document.getElementById('cart').innerHTML = entries.length ? entries.map(([pid, q]) => {
       const p = Store.prod(pid);
       return `
         <div class="cart-row">
-          <div class="thumb">${p.emoji}</div>
+          ${tile(p.name, 36, 13)}
           <div class="ci"><div class="n">${Store.esc(p.name)}</div><div class="p">${Store.money(p.price)} c/u</div></div>
           <span class="qty"><button data-act="dec" data-id="${pid}">${icon('minus', 13)}</button><span class="n">${q}</span><button data-act="inc" data-id="${pid}" ${q >= p.stock ? 'disabled' : ''}>${icon('plus', 13)}</button></span>
           <span class="sub">${Store.money(p.price * q)}</span>
@@ -436,7 +448,7 @@ const app = (() => {
         <thead><tr><th>Producto</th><th class="num" style="text-align:right">Precio</th><th>Stock</th><th></th></tr></thead>
         <tbody>${db.products.map(p => `
           <tr>
-            <td><div style="display:flex;align-items:center;gap:10px"><span class="thumb" style="width:30px;height:30px;border-radius:8px;background:#f2f4f7;display:grid;place-items:center;font-size:15px">${p.emoji}</span><b>${Store.esc(p.name)}</b></div></td>
+            <td><div style="display:flex;align-items:center;gap:10px">${tile(p.name, 30, 11)}<b>${Store.esc(p.name)}</b></div></td>
             <td class="num">${Store.money(p.price)}</td>
             <td><div class="stockbar"><span class="bar"><i style="width:${Math.min(100, p.stock / 30 * 100)}%;background:${stockDot(p.stock)}"></i></span><span style="font-size:12.5px;color:var(--text-2)">${p.stock} u</span></div></td>
             <td class="row-actions"><button class="btn sm" data-act="restock" data-id="${p.id}">+5</button></td>
