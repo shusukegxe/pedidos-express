@@ -258,3 +258,29 @@ svg { flex: none; }
   .fan { grid-template-columns: repeat(2, 1fr); }
   .fan::before, .fan-merge::after { display: none; }
 }
+
+/* estadisticas (tortas-devtools) */
+.stats-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; margin-bottom: 18px; }
+.hbar { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.hbar-name { width: 150px; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hbar-track { flex: 1; height: 10px; background: #efe2c8; border-radius: 99px; overflow: hidden; }
+.hbar-track i { display: block; height: 100%; background: var(--gold); border-radius: 99px; }
+.hbar-val { font-size: 12px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.donut-wrap { display: flex; gap: 20px; align-items: center; }
+.donut { width: 124px; height: 124px; border-radius: 99px; position: relative; flex: none; }
+.donut::after { content: ''; position: absolute; inset: 23px; background: var(--surface); border-radius: 99px; }
+.donut-center { position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; flex: 1; }
+.legend .li { display: flex; align-items: center; gap: 8px; }
+.legend .dot { width: 8px; height: 8px; border-radius: 99px; flex: none; }
+.legend .n { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+.vchart { display: flex; align-items: stretch; gap: 10px; height: 160px; padding-top: 6px; }
+.vcol { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.vcol .vspace { flex: 1; display: flex; align-items: flex-end; width: 100%; justify-content: center; }
+.vbar { width: 100%; max-width: 44px; background: #f6ecd7; border-radius: 6px 6px 0 0; overflow: hidden; display: flex; align-items: flex-end; }
+.vbar i { display: block; width: 100%; background: var(--gold); border-radius: 6px 6px 0 0; }
+.vval { font-size: 10.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.vlab { font-size: 11px; color: var(--text-3); text-transform: capitalize; }
+.lat-chip { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.lat-chip b { color: var(--text); }
+@media (max-width: 960px) { .stats-grid { grid-template-columns: 1fr; } }
