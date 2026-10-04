@@ -3,43 +3,42 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PedidosExpress · prototipo</title>
+<title>PedidosExpress — sistema de pedidos (prototipo)</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="hero">
-  <h1>🧾 PedidosExpress</h1>
-  <p>Prototipo funcional de un sistema de pedidos en HTML puro, sin backend real:
-  la base de datos es <code>localStorage</code> y la API es un enrutador simulado con latencia.
-  Las tres apps comparten datos y traza en vivo — ábrelas en pestañas distintas y véalas hablarse.</p>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <div class="brand-name">PedidosExpress</div>
+        <div class="brand-sub">Sistema de pedidos</div>
+      </div>
+      <span class="brand-tag">DEMO</span>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Aplicaciones</div>
+      <a href="#/tienda" data-route="tienda" data-icon="store" class="active">Tienda</a>
+      <a href="#/panel" data-route="panel" data-icon="panel">Panel del negocio</a>
+      <a href="#/devtools" data-route="devtools" data-icon="terminal">DevTools</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div>Prototipo funcional · datos locales</div>
+      <a href="https://github.com/shusukegxe/pedidos-express" target="_blank" rel="noopener">github.com/shusukegxe/pedidos-express</a>
+    </div>
+  </aside>
+
+  <div id="shell">
+    <main id="view"></main>
+  </div>
 </div>
 
-<div class="apps">
-  <a class="app-card" href="cliente.html">
-    <div class="ic">🛒</div>
-    <h2>Cliente</h2>
-    <p>La tienda: catálogo con stock en vivo, carrito y checkout. Pagos con tarjeta simulados,
-    seguimiento del pedido y avisos cuando el manager mueve tu pedido.</p>
-  </a>
-  <a class="app-card" href="manager.html">
-    <div class="ic">📊</div>
-    <h2>Manager</h2>
-    <p>El panel del negocio: KPIs, gestión de pedidos (avanzar estado, cancelar), inventario con
-    reposición, registro de clientes y notificaciones. Se actualiza solo.</p>
-  </a>
-  <a class="app-card" href="devtools.html">
-    <div class="ic">🛠️</div>
-    <h2>DevTools</h2>
-    <p>La caja negra abierta: el diagrama de arquitectura en vivo, la traza completa de cada
-    llamada al "backend", los datos crudos y el botón de reinicio de la demo.</p>
-  </a>
-</div>
+<div id="modal-root"></div>
+<div id="toasts"></div>
 
-<p class="footer-note">
-  ¿Prefieres todo en una sola página? <a href="prototipo.html">Versión monolítica original</a> ·
-  <a href="https://github.com/shusukegxe/pedidos-express">código en GitHub</a>
-</p>
-
+<script src="core.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
