@@ -29,18 +29,41 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{25A0}-\u{25FF}]/u;
   ok(!EMOJI.test(d.body.textContent), 'UI sin emojis ni glifos decorativos');
 
-  // 2. carrito
+  // 2. carrito con tamaños
   d.querySelector('[data-act="add"][data-id="p1"]').click();
   d.querySelector('[data-act="inc"][data-id="p1"]').click();
   d.querySelector('[data-act="add"][data-id="p3"]').click();
   await sleep(50);
   ok(d.getElementById('cart-count').textContent === '3 items', 'carrito: 3 items tras agregar');
-  ok(d.getElementById('total-row').textContent.includes('$56.000'), 'carrito: total $56.000 en formato CLP');
+  ok(d.getElementById('total-row').textContent.includes('S/ 222.00'), 'carrito: 2 Selva Negra M (S/ 72) + Cheesecake M (S/ 78) = S/ 222.00');
+  ok(!!d.querySelector('#cart .pj-tam'), 'carrito: selector de tamaño por línea');
+  const sel = d.querySelector('#cart .pj-tam');
+  sel.value = 'G';
+  sel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  await sleep(30);
+  ok(d.getElementById('total-row').textContent.includes('S/ 268.00'), 'tamaños: Selva Negra a Grande → S/ 268.00');
+  const gsel = [...d.querySelectorAll('#cart .pj-tam')].find(x => x.dataset.tam === 'p1-G');
+  gsel.value = 'M';
+  gsel.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  await sleep(30);
   d.querySelector('[data-act="dec"][data-id="p1"]').click();
   await sleep(20);
-  ok(d.getElementById('total-row').textContent.includes('$38.000'), 'carrito: -1 Selva Negra → $38.000');
+  ok(d.getElementById('total-row').textContent.includes('S/ 150.00'), 'carrito: -1 Selva Negra → S/ 150.00');
 
-  // 3. checkout en efectivo (determinista: la transferencia simulada rechaza el 10% al azar)
+  // 3. personalizada: editor manual + chat presente
+  d.querySelector('[data-act="personalizar"]').click();
+  await sleep(30);
+  ok(!!d.querySelector('#pj-masa'), 'personalizada: modal con editor');
+  ok(!!d.querySelector('#pj-chat-input'), 'personalizada: chat de IA presente');
+  d.getElementById('pj-extra').value = 'tema de mariposas';
+  d.getElementById('pj-generar-desc').click();
+  ok(d.getElementById('pj-desc').value.includes('mariposas'), 'personalizada: descripción armada desde los campos');
+  d.getElementById('pj-add-pers').click();
+  await sleep(30);
+  ok(d.getElementById('cart-count').textContent === '3 items', 'personalizada: agregada al carrito (3 unidades en 3 líneas)');
+  ok(d.getElementById('total-row').textContent.includes('S/ 270.00'), 'personalizada: total S/ 270.00 (150 + 120)');
+
+  // 4. checkout en efectivo (determinista: la transferencia simulada rechaza el 10% al azar)
   d.querySelector('input[name="pay"][value="efectivo"]').checked = true;
   d.querySelector('input[name="pay"][value="efectivo"]').dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   d.getElementById('f-name').value = 'Cliente de prueba';
@@ -50,7 +73,7 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   await sleep(1600);
   const modalTxt = d.getElementById('modal-root').textContent;
   ok(modalTxt.includes('Pedido O-0003 confirmado'), 'checkout: modal de confirmación con O-0003');
-  ok(modalTxt.includes('$38.000'), 'checkout: total correcto en CLP');
+  ok(modalTxt.includes('S/ 270.00'), 'checkout: total correcto en soles');
   ok(!!d.querySelector('.modal .btn.wa') && d.querySelector('.modal .btn.wa').href.includes('wa.me'), 'checkout: enlace wa.me con el resumen');
   ok(!!d.querySelector('.tracker'), 'tienda: barra de seguimiento visible');
   ok(d.querySelector('.tracker').textContent.includes('Recibido'), 'tracker: paso "Recibido" presente');

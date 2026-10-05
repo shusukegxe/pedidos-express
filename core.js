@@ -11,7 +11,7 @@ const Store = (() => {
   // ---------- utilidades ----------
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const lat = () => 80 + Math.random() * 140;
-  const money = n => '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');  // CLP: $18.000
+  const money = n => 'S/ ' + Number(n).toFixed(2);  // soles
   const fecha = s => s ? new Date(s + 'T12:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' }) : '';
   const hora = t => new Date(t).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
   const ahora = () => new Date().toLocaleTimeString('es', { hour12: false });
@@ -25,31 +25,31 @@ const Store = (() => {
     return {
       seq: 3,
       products: [
-        { id: 'p1', img: 'selva-negra.png',   name: 'Selva Negra', desc: 'Bizcocho de chocolate, crema chantilly, cerezas y virutas.', price: 18000, stock: 7 },
-        { id: 'p2', img: 'tres-leches.png',   name: 'Tres Leches', desc: 'Clásica y jugosa, con un toque de canela y crema suave.',     price: 17000, stock: 10 },
-        { id: 'p3', img: 'cheesecake.png',    name: 'Cheesecake',  desc: 'Base de galleta, crema de queso y salsa de berries casera.', price: 20000, stock: 6 },
-        { id: 'p4', img: 'chantilly.png',     name: 'Torta de Chantilly', desc: 'Suave, esponjosa y decorada con crema y frutas.',      price: 16500, stock: 8 },
-        { id: 'p5', img: 'personalizada.png', name: 'Personalizada', desc: 'Cuéntanos tu idea y la hacemos realidad.',                price: 22000, stock: 4 },
+        { id: 'p1', img: 'selva-negra.png',   name: 'Selva Negra', desc: 'Bizcocho de chocolate, crema chantilly, cerezas y virutas.', price: 72, stock: 7 },
+        { id: 'p2', img: 'tres-leches.png',   name: 'Tres Leches', desc: 'Clásica y jugosa, con un toque de canela y crema suave.',     price: 68, stock: 10 },
+        { id: 'p3', img: 'cheesecake.png',    name: 'Cheesecake',  desc: 'Base de galleta, crema de queso y salsa de berries casera.', price: 78, stock: 6 },
+        { id: 'p4', img: 'chantilly.png',     name: 'Torta de Chantilly', desc: 'Suave, esponjosa y decorada con crema y frutas.',      price: 62, stock: 8 },
+        { id: 'p5', img: 'personalizada.png', name: 'Personalizada', desc: 'Cuéntanos tu idea y la hacemos realidad.',                price: 120, stock: 4 },
       ],
       orders: [
         {
           id: 'O-0001', customer: { name: 'Ana Torres', phone: '555-0101', address: 'Calle 1 #23', note: 'para un cumpleaños' },
-          items: [{ pid: 'p3', name: 'Cheesecake', price: 20000, qty: 1 }],
-          total: 20000, payMethod: 'transferencia', payStatus: 'aprobado', status: 'entregado',
+          items: [{ pid: 'p3', name: 'Cheesecake · Mediana', price: 78, qty: 1, tam: 'M' }],
+          total: 78, payMethod: 'transferencia', payStatus: 'aprobado', status: 'entregado',
           deliveryDate: ayer, createdAt: t - 86400000,
           history: [{ status: 'nuevo', at: t - 86400000 }, { status: 'entregado', at: t - 86400000 + 3600000 }],
         },
         {
           id: 'O-0002', customer: { name: 'Luis Pérez', phone: '555-0102', address: 'Av. Central #45', note: 'sin azúcar extra' },
-          items: [{ pid: 'p1', name: 'Selva Negra', price: 18000, qty: 1 }],
-          total: 18000, payMethod: 'efectivo', payStatus: 'pendiente', status: 'nuevo',
+          items: [{ pid: 'p1', name: 'Selva Negra · Mediana', price: 72, qty: 1, tam: 'M' }],
+          total: 72, payMethod: 'efectivo', payStatus: 'pendiente', status: 'nuevo',
           deliveryDate: manana, createdAt: t - 3600000,
           history: [{ status: 'nuevo', at: t - 3600000 }],
         },
       ],
       customers: [
-        { phone: '555-0101', name: 'Ana Torres', orders: 1, spent: 20000 },
-        { phone: '555-0102', name: 'Luis Pérez', orders: 1, spent: 18000 },
+        { phone: '555-0101', name: 'Ana Torres', orders: 1, spent: 78 },
+        { phone: '555-0102', name: 'Luis Pérez', orders: 1, spent: 72 },
       ],
       notifications: [
         { kind: 'order', text: 'Sistema iniciado con datos de ejemplo.', at: '09:00:00' },
